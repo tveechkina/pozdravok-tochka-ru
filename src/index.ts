@@ -1,14 +1,49 @@
 import { Bot } from "grammy";
-import { PozdravokDBManager } from "./db/pozdravok-db-manager.js";
-import { PozdravokCommandHandler } from "./db/pozdravok-command-handler.js";
+import { PozdravokUserDBManager } from "./db/pozdravok-user-db-manager.js";
+import { PozdravokUserCommandHandler } from "./user/pozdravok-user-command-handler.js";
+import { PozdravokChatDBManager } from "./db/pozdravok-chat-db-manager.js";
+import { PozdravokChatCommandHandler } from "./chat/pozdravok-chat-command-handler.js";
 
 const bot = new Bot(process.env.BOT_TOKEN!);
-const dbManager = new PozdravokDBManager();
-const commandHandler = new PozdravokCommandHandler(dbManager);
+const userDBManager = new PozdravokUserDBManager();
+const userCommandHandler = new PozdravokUserCommandHandler(userDBManager);
 
+const chatDBManager = new PozdravokChatDBManager();
+const chatCommandHandler = new PozdravokChatCommandHandler(chatDBManager);
+
+bot.chatType(["group", "supergroup"]).command("register", async (context) => {
+  const success = chatCommandHandler.register(context);
+
+  if (success) {
+    await context.reply("Бот готов поздравлять!");
+  }
+});
+
+bot.chatType(["group", "supergroup"]).command("unregister", async (context) => {
+  const success = chatCommandHandler.unregister(context);
+
+  if (success) {
+    await context.reply("Вас больше не поздравят :(");
+  }
+});
+
+bot.catch(async (err) => {
+  const ctx = err.ctx;
+  const error = err.error;
+
+  console.error(error);
+
+  const message = error instanceof Error ? error.message : "Произошла ошибка";
+
+  try {
+    await ctx.reply(message);
+  } catch {}
+});
+
+/////// FIXME: Регистрация пользователей в привате для расширенного описания.
 bot.command("add", (ctx) => {
   try {
-    const { username, success } = commandHandler.addUser(ctx);
+    const { username, success } = userCommandHandler.addUser(ctx);
 
     if (!success) {
       throw new Error("Праздник для данного пользователя уже добавлен в чат.");
@@ -24,7 +59,7 @@ bot.command("add", (ctx) => {
 
 bot.command("addme", (ctx) => {
   try {
-    const success = commandHandler.addAuthor(ctx);
+    const success = userCommandHandler.addAuthor(ctx);
 
     if (!success) {
       throw new Error("Праздник для данного пользователя уже добавлен в чат.");
@@ -40,7 +75,7 @@ bot.command("addme", (ctx) => {
 
 bot.command("delete", (ctx) => {
   try {
-    const { success, username } = commandHandler.deleteUser(ctx);
+    const { success, username } = userCommandHandler.deleteUser(ctx);
 
     if (!success) {
       throw new Error(
@@ -58,7 +93,7 @@ bot.command("delete", (ctx) => {
 
 bot.command("deleteme", (ctx) => {
   try {
-    const success = commandHandler.deleteAuthor(ctx);
+    const success = userCommandHandler.deleteAuthor(ctx);
 
     if (!success) {
       throw new Error("Кажется, праздника для вас никогда не существовало.");

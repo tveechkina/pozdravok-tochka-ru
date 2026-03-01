@@ -1,13 +1,16 @@
 import type { CommandContext, Context } from "grammy";
-import type { PozdravokDBManager, User } from "./pozdravok-db-manager.js";
+import type {
+  PozdravokUserDBManager,
+  User,
+} from "../db/pozdravok-user-db-manager.js";
 
 type AddUserArguments = {
   date: string;
   tag: string;
 };
 
-export class PozdravokCommandHandler {
-  constructor(private readonly dbManager: PozdravokDBManager) {}
+export class PozdravokUserCommandHandler {
+  constructor(private readonly userDBManager: PozdravokUserDBManager) {}
 
   addUser(context: CommandContext<Context>): {
     username: string | null;
@@ -58,7 +61,7 @@ export class PozdravokCommandHandler {
       tag: record.tag,
     };
 
-    return !!this.dbManager.add(user, chatId).changes;
+    return !!this.userDBManager.add(user, chatId).changes;
   }
 
   deleteUser(context: CommandContext<Context>): {
@@ -84,7 +87,7 @@ export class PozdravokCommandHandler {
       throw new Error("Необходимо указать пользователя.");
     }
 
-    return !!this.dbManager.delete(username, chatId).changes;
+    return !!this.userDBManager.delete(username, chatId).changes;
   }
 
   private getUsername(context: CommandContext<Context>): string | null {

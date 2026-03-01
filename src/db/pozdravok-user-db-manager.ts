@@ -1,4 +1,5 @@
 import Database, { type RunResult } from "better-sqlite3";
+import path from "node:path";
 
 export type User = {
   id: string;
@@ -6,11 +7,13 @@ export type User = {
   tag?: string;
 };
 
-export class PozdravokDBManager {
+const dbPath = path.resolve(process.cwd(), "./database/user-database.db");
+
+export class PozdravokUserDBManager {
   private readonly db: Database.Database;
 
   constructor() {
-    this.db = new Database("database.db");
+    this.db = new Database(dbPath);
 
     this.init();
   }
