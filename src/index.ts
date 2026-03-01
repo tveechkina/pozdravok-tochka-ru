@@ -3,12 +3,15 @@ import { PozdravokUserDBManager } from "./db/pozdravok-user-db-manager.js";
 import { PozdravokUserCommandHandler } from "./user/pozdravok-user-command-handler.js";
 import { PozdravokChatDBManager } from "./db/pozdravok-chat-db-manager.js";
 import { PozdravokChatCommandHandler } from "./chat/pozdravok-chat-command-handler.js";
+import { PozdravokDatabaseManager } from "./db/pozdravok-db-manager.js";
 
 const bot = new Bot(process.env.BOT_TOKEN!);
-const userDBManager = new PozdravokUserDBManager();
+const database = new PozdravokDatabaseManager();
+
+const userDBManager = new PozdravokUserDBManager(database);
 const userCommandHandler = new PozdravokUserCommandHandler(userDBManager);
 
-const chatDBManager = new PozdravokChatDBManager();
+const chatDBManager = new PozdravokChatDBManager(database);
 const chatCommandHandler = new PozdravokChatCommandHandler(chatDBManager);
 
 bot.chatType(["group", "supergroup"]).command("register", async (context) => {
@@ -40,70 +43,35 @@ bot.catch(async (err) => {
   } catch {}
 });
 
-/////// FIXME: Регистрация пользователей в привате для расширенного описания.
-bot.command("add", (ctx) => {
-  try {
-    const { username, success } = userCommandHandler.addUser(ctx);
+bot.chatType(["group", "supergroup"]).command("add", async (context) => {
+  const { success, user } = userCommandHandler.addUser(context);
 
-    if (!success) {
-      throw new Error("Праздник для данного пользователя уже добавлен в чат.");
-    }
-
-    if (success) {
-      ctx.reply("Праздник для @" + username + " успешно добавлен!");
-    }
-  } catch (error) {
-    ctx.reply("Не удалось добавить пользователя. " + error);
+  if (success) {
+    await context.reply("Бот готов поздравлять @" + user?.username + "!");
   }
 });
 
-bot.command("addme", (ctx) => {
-  try {
-    const success = userCommandHandler.addAuthor(ctx);
+bot.chatType(["group", "supergroup"]).command("addme", async (context) => {
+  const success = userCommandHandler.addMe(context);
 
-    if (!success) {
-      throw new Error("Праздник для данного пользователя уже добавлен в чат.");
-    }
-
-    if (success) {
-      ctx.reply("Праздник для @" + ctx.from?.username + " успешно добавлен!");
-    }
-  } catch (error) {
-    ctx.reply("Не удалось добавить вас. " + error);
+  if (success) {
+    await context.reply("Скоро-скоро вас поздравим!");
   }
 });
 
-bot.command("delete", (ctx) => {
-  try {
-    const { success, username } = userCommandHandler.deleteUser(ctx);
+bot.chatType(["group", "supergroup"]).command("delete", async (context) => {
+  const success = userCommandHandler.deleteUser(context);
 
-    if (!success) {
-      throw new Error(
-        "Кажется, праздника для пользователя никогда не существовало.",
-      );
-    }
-
-    if (success) {
-      ctx.reply("Праздник для @" + username + " удален.");
-    }
-  } catch (error) {
-    ctx.reply("Не удалось удалить пользователя. " + error);
+  if (success) {
+    await context.reply("Удалили кого-то!");
   }
 });
 
-bot.command("deleteme", (ctx) => {
-  try {
-    const success = userCommandHandler.deleteAuthor(ctx);
+bot.chatType(["group", "supergroup"]).command("deleteme", async (context) => {
+  const success = userCommandHandler.deleteMe(context);
 
-    if (!success) {
-      throw new Error("Кажется, праздника для вас никогда не существовало.");
-    }
-
-    if (success) {
-      ctx.reply("Праздник для @" + ctx.from?.username + " удален.");
-    }
-  } catch (error) {
-    ctx.reply("Не удалось удалить праздник для вас. " + error);
+  if (success) {
+    await context.reply("Удалили вас!");
   }
 });
 

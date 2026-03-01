@@ -1,5 +1,6 @@
 import Database, { type RunResult } from "better-sqlite3";
-import path from "node:path";
+import type { PozdravokDatabaseManager } from "./pozdravok-db-manager.ts";
+import type { PozdravokUserBase } from "../models/user.models.js";
 
 export type User = {
   id: string;
@@ -7,35 +8,48 @@ export type User = {
   tag?: string;
 };
 
-const dbPath = path.resolve(process.cwd(), "./database/user-database.db");
-
 export class PozdravokUserDBManager {
   private readonly db: Database.Database;
 
-  constructor() {
-    this.db = new Database(dbPath);
+  constructor(private readonly databaseManager: PozdravokDatabaseManager) {
+    this.db = this.databaseManager.getDatabase();
 
     this.init();
   }
 
-  add(user: User, chatId: number): RunResult {
-    const query = this.db.prepare(`
-      INSERT OR IGNORE INTO users (chat_id, user_id, holiday_date, tag, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `);
+  add(user: PozdravokUserBase, chatId: number): RunResult {
+    const chatExist = this.db
+      .prepare(`SELECT 1 FROM chats WHERE id = ?`)
+      .get(chatId);
 
-    return query.run(
-      chatId,
-      user.id,
-      user.date,
-      user.tag || "день_рождения",
-      new Date().toISOString(),
-    );
+    if (!chatExist) {
+      throw new Error(
+        "Бот пока не умеет поздравлять в этом чате. Научите командой /register",
+      );
+    }
+
+    return this.db
+      .prepare(
+        `
+        INSERT INTO users (id, chatId, username, firstName, createdAt)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(chatId, id) DO UPDATE SET
+            username = excluded.username,
+            firstName = excluded.firstName
+        `,
+      )
+      .run(
+        user.id,
+        chatId,
+        user.username,
+        user.firstName,
+        new Date().toISOString(),
+      );
   }
 
-  delete(userId: string, chatId: number): RunResult {
+  delete(userId: number, chatId: number): RunResult {
     const query = this.db.prepare(`
-      DELETE FROM users WHERE chat_id = ? AND user_id = ?
+      DELETE FROM users WHERE chatId = ? AND id = ?
     `);
 
     return query.run(chatId, userId);
@@ -44,12 +58,12 @@ export class PozdravokUserDBManager {
   private init(): void {
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS users (
-        chat_id INTEGER,
-        user_id TEXT,
-        holiday_date TEXT,
-        tag TEXT,
-        created_at TEXT,
-        PRIMARY KEY (chat_id, user_id)
+        id INTEGER,
+        chatId INTEGER,
+        username TEXT,
+        firstName TEXT,
+        createdAt TEXT,
+        PRIMARY KEY (chatId, id)
       )
     `);
   }
