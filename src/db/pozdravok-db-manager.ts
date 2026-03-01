@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { type RunResult } from "better-sqlite3";
 
 export type User = {
   id: string;
@@ -15,21 +15,27 @@ export class PozdravokDBManager {
     this.init();
   }
 
-  add(user: User, chatId: number): void {
+  add(user: User, chatId: number): RunResult {
     const query = this.db.prepare(`
       INSERT OR IGNORE INTO users (chat_id, user_id, holiday_date, tag, created_at)
       VALUES (?, ?, ?, ?, ?)
     `);
 
-    query.run(chatId, user.id, user.date, user.tag, new Date().toISOString());
+    return query.run(
+      chatId,
+      user.id,
+      user.date,
+      user.tag || "день_рождения",
+      new Date().toISOString(),
+    );
   }
 
-  delete(userId: string, chatId: number): void {
+  delete(userId: string, chatId: number): RunResult {
     const query = this.db.prepare(`
       DELETE FROM users WHERE chat_id = ? AND user_id = ?
     `);
 
-    query.run(chatId, userId);
+    return query.run(chatId, userId);
   }
 
   private init(): void {

@@ -9,106 +9,104 @@ type AddUserArguments = {
 export class PozdravokCommandHandler {
   constructor(private readonly dbManager: PozdravokDBManager) {}
 
-  addUser(context: CommandContext<Context>): void {
+  addUser(context: CommandContext<Context>): {
+    username: string | null;
+    success: boolean;
+  } {
     const username = this.getUsername(context);
-    this.add(context, username);
+    return { username, success: this.add(context, username) };
   }
 
-  addAuthor(context: CommandContext<Context>): void {
+  addAuthor(context: CommandContext<Context>): boolean {
     const username = context.from?.username;
-    this.add(context, username);
+    return this.add(context, username);
   }
 
   private add(
     context: CommandContext<Context>,
     username?: string | null,
-  ): void {
-    try {
-      const chatId = context.chat.id;
+  ): boolean {
+    const chatId = context.chat.id;
 
-      if (!username) {
-        return;
-      }
-
-      const args = context.match.replace(username, "").trim();
-
-      if (!args) {
-        throw Error("No arguments provided!");
-      }
-
-      const record: AddUserArguments = Object.fromEntries(
-        args.split(" ").map((arg) => arg.split("=")),
+    if (!username) {
+      throw new Error(
+        "Необходимо указать пользователя или воспользоваться командой /addme.",
       );
-
-      if (!record.date) {
-        throw Error("No holiday date provided!");
-      }
-
-      const user: User = {
-        id: username,
-        date: record.date,
-        tag: record.tag,
-      };
-
-      this.dbManager.add(user, chatId);
-    } catch (error) {
-      console.error("Cannot handle /add command", { error });
     }
+
+    const args = context.match.replace(username, "").trim();
+
+    if (!args) {
+      throw new Error(
+        "Необходимо добавить информацию о празднике: дату и тег.",
+      );
+    }
+
+    const record: AddUserArguments = Object.fromEntries(
+      args.split(" ").map((arg) => arg.split("=")),
+    );
+
+    if (!record.date) {
+      throw new Error(
+        "Необходимо добавить дату праздника в формате `date=YYYY-MM-DD`",
+      );
+    }
+
+    const user: User = {
+      id: username,
+      date: record.date,
+      tag: record.tag,
+    };
+
+    return !!this.dbManager.add(user, chatId).changes;
   }
 
-  deleteUser(context: CommandContext<Context>): void {
+  deleteUser(context: CommandContext<Context>): {
+    username: string | null;
+    success: boolean;
+  } {
     const username = this.getUsername(context);
-    this.delete(context, username);
+    return { username, success: this.delete(context, username) };
   }
 
-  deleteAuthor(context: CommandContext<Context>): void {
+  deleteAuthor(context: CommandContext<Context>): boolean {
     const username = context.from?.username;
-    this.delete(context, username);
+    return this.delete(context, username);
   }
 
   private delete(
     context: CommandContext<Context>,
     username?: string | null,
-  ): void {
-    try {
-      const chatId = context.chat.id;
+  ): boolean {
+    const chatId = context.chat.id;
 
-      if (!username) {
-        return;
-      }
-
-      this.dbManager.delete(username, chatId);
-    } catch (error) {
-      console.error("Cannot handle /delete command", { error });
+    if (!username) {
+      throw new Error("Необходимо указать пользователя.");
     }
+
+    return !!this.dbManager.delete(username, chatId).changes;
   }
 
   private getUsername(context: CommandContext<Context>): string | null {
-    try {
-      const message = context.message;
+    const message = context.message;
 
-      if (!message) {
-        throw Error("The message is empty!");
-      }
-
-      const userMention = message?.entities.find(
-        (entity) => entity.type === "mention",
-      );
-
-      if (!userMention) {
-        throw Error("No username passed!");
-      }
-
-      const username = message.text.slice(
-        userMention.offset + 1,
-        userMention.offset + userMention.length,
-      );
-
-      return username;
-    } catch (error) {
-      console.error("Cannot find the username", { error });
-
+    if (!message) {
       return null;
     }
+
+    const userMention = message?.entities.find(
+      (entity) => entity.type === "mention",
+    );
+
+    if (!userMention) {
+      return null;
+    }
+
+    const username = message.text.slice(
+      userMention.offset + 1,
+      userMention.offset + userMention.length,
+    );
+
+    return username;
   }
 }

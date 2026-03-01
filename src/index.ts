@@ -7,19 +7,69 @@ const dbManager = new PozdravokDBManager();
 const commandHandler = new PozdravokCommandHandler(dbManager);
 
 bot.command("add", (ctx) => {
-  commandHandler.addUser(ctx);
+  try {
+    const { username, success } = commandHandler.addUser(ctx);
+
+    if (!success) {
+      throw new Error("Праздник для данного пользователя уже добавлен в чат.");
+    }
+
+    if (success) {
+      ctx.reply("Праздник для @" + username + " успешно добавлен!");
+    }
+  } catch (error) {
+    ctx.reply("Не удалось добавить пользователя. " + error);
+  }
 });
 
 bot.command("addme", (ctx) => {
-  commandHandler.addAuthor(ctx);
+  try {
+    const success = commandHandler.addAuthor(ctx);
+
+    if (!success) {
+      throw new Error("Праздник для данного пользователя уже добавлен в чат.");
+    }
+
+    if (success) {
+      ctx.reply("Праздник для @" + ctx.from?.username + " успешно добавлен!");
+    }
+  } catch (error) {
+    ctx.reply("Не удалось добавить вас. " + error);
+  }
 });
 
 bot.command("delete", (ctx) => {
-  commandHandler.deleteUser(ctx);
+  try {
+    const { success, username } = commandHandler.deleteUser(ctx);
+
+    if (!success) {
+      throw new Error(
+        "Кажется, праздника для пользователя никогда не существовало.",
+      );
+    }
+
+    if (success) {
+      ctx.reply("Праздник для @" + username + " удален.");
+    }
+  } catch (error) {
+    ctx.reply("Не удалось удалить пользователя. " + error);
+  }
 });
 
 bot.command("deleteme", (ctx) => {
-  commandHandler.deleteAuthor(ctx);
+  try {
+    const success = commandHandler.deleteAuthor(ctx);
+
+    if (!success) {
+      throw new Error("Кажется, праздника для вас никогда не существовало.");
+    }
+
+    if (success) {
+      ctx.reply("Праздник для @" + ctx.from?.username + " удален.");
+    }
+  } catch (error) {
+    ctx.reply("Не удалось удалить праздник для вас. " + error);
+  }
 });
 
 bot.start();
