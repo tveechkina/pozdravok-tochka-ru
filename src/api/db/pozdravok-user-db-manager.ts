@@ -1,6 +1,6 @@
 import Database, { type RunResult } from "better-sqlite3";
-import type { PozdravokDatabaseManager } from "./pozdravok-db-manager.ts";
-import type { PozdravokUserBase } from "../models/user.models.js";
+import type { PozdravokDatabaseManager } from "./pozdravok-db-manager.js";
+import type { PozdravokUserBase } from "../../models/user.models.js";
 
 export type User = {
   id: string;
@@ -48,11 +48,16 @@ export class PozdravokUserDBManager {
   }
 
   delete(userId: number, chatId: number): RunResult {
+    const test = this.db.prepare(
+      `SELECT * FROM users WHERE id = ? AND chatId = ?;`,
+    );
+    console.log(test.run(userId, chatId));
+
     const query = this.db.prepare(`
-      DELETE FROM users WHERE chatId = ? AND id = ?
+      DELETE FROM users WHERE id = ? AND chatId = ?
     `);
 
-    return query.run(chatId, userId);
+    return query.run(userId, chatId);
   }
 
   private init(): void {

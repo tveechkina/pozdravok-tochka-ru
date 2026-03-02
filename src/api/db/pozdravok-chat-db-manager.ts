@@ -1,6 +1,6 @@
 import Database, { type RunResult } from "better-sqlite3";
 import path from "node:path";
-import type { PozdravokDatabaseManager } from "./pozdravok-db-manager.ts";
+import type { PozdravokDatabaseManager } from "./pozdravok-db-manager.js";
 
 const dbPath = path.resolve(process.cwd(), "./database/chat-database.db");
 

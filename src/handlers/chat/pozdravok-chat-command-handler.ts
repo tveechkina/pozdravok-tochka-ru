@@ -1,5 +1,5 @@
-import type { PozdravokChatDBManager } from "../db/pozdravok-chat-db-manager.js";
-import type { PozdravokChatContext } from "../models/chat.models.js";
+import type { PozdravokChatDBManager } from "../../api/db/pozdravok-chat-db-manager.js";
+import type { PozdravokChatContext } from "../../models/chat.models.js";
 
 export class PozdravokChatCommandHandler {
   constructor(private readonly dbManager: PozdravokChatDBManager) {}
