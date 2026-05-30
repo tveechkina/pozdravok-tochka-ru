@@ -1,9 +1,9 @@
-import type { PozdravokUserBase } from "../../models/user.models.js";
-import type { PozdravokChatContext } from "../../models/chat.models.js";
-import type { PozdravokUserDBManager } from "../../api/db/pozdravok-user-db-manager.js";
+import type { PozdravokUserBase } from "../../../models/user.models.js";
+import type { PozdravokChatContext } from "../../../models/chat.models.js";
+import type { PozdravokUserDBManager } from "../../../api/db/pozdravok-user-db-manager.js";
 
 export class PozdravokUserCommandHandler {
-  constructor(private readonly userDBManager: PozdravokUserDBManager) {}
+  constructor(private readonly userDBManager: PozdravokUserDBManager) { }
 
   addMe(context: PozdravokChatContext): boolean {
     const username = context.from?.username;
@@ -38,5 +38,30 @@ export class PozdravokUserCommandHandler {
     }
 
     return !!this.userDBManager.delete(id, chatId).changes;
+  }
+
+  aboutMe(context: PozdravokChatContext): PozdravokUserBase {
+    const id = context.from?.id || null;
+    const user = this.about(context, id);
+
+    if (!user) {
+      throw new Error(
+        "Не знаю тебя! Используй команду /addme.",
+      );
+    }
+
+    return user;
+  }
+
+  private about(context: PozdravokChatContext, id: number | null): PozdravokUserBase {
+    const chatId = context.chat.id;
+
+    if (!id) {
+      throw new Error(
+        "А не умею я пока! Используйте команду /register.",
+      );
+    }
+
+    return this.userDBManager.get(id, chatId);
   }
 }

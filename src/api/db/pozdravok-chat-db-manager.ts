@@ -1,8 +1,7 @@
 import Database, { type RunResult } from "better-sqlite3";
-import path from "node:path";
 import type { PozdravokDatabaseManager } from "./pozdravok-db-manager.js";
+import type { PozdravokUserChatBase, PozdravokChatContext } from "../../models/chat.models.js";
 
-const dbPath = path.resolve(process.cwd(), "./database/chat-database.db");
 
 export class PozdravokChatDBManager {
   private readonly db: Database.Database;
@@ -13,13 +12,13 @@ export class PozdravokChatDBManager {
     this.init();
   }
 
-  register(chatId: number): RunResult {
+  register(chat: PozdravokChatContext): RunResult {
     const query = this.db.prepare(`
-          INSERT OR IGNORE INTO chats (id, createdAt)
-          VALUES (?, ?)
+          INSERT OR IGNORE INTO chats (id, title, createdAt)
+          VALUES (?, ?, ?)
         `);
 
-    return query.run(chatId, new Date().toISOString());
+    return query.run(chat.chat.id, chat.chat.title, new Date().toISOString());
   }
 
   unregister(chatId: number): RunResult {
@@ -30,10 +29,28 @@ export class PozdravokChatDBManager {
     return query.run(chatId);
   }
 
+  list(userId: number): PozdravokUserChatBase[] {
+    return this.db
+      .prepare(`
+      SELECT
+        chats.id,
+        chats.title,
+        users.username,
+        users.firstName,
+        chats.createdAt
+      FROM users
+      JOIN chats ON chats.id = users.chatId
+      WHERE users.id = ?
+      ORDER BY chats.createdAt DESC
+    `)
+      .all(userId) as PozdravokUserChatBase[];
+  }
+
   private init(): void {
     this.db.exec(`
           CREATE TABLE IF NOT EXISTS chats (
             id INTEGER,
+            title TEXT,
             createdAt TEXT,
             PRIMARY KEY (id)
           )

@@ -17,6 +17,26 @@ export class PozdravokUserDBManager {
     this.init();
   }
 
+  get(userId: number, chatId: number): PozdravokUserBase {
+    const chatExist = this.db
+      .prepare(`SELECT 1 FROM chats WHERE id = ?`)
+      .get(chatId);
+
+    if (!chatExist) {
+      throw new Error(
+        "Бот пока не умеет поздравлять в этом чате. Научите командой /register",
+      );
+    }
+
+    return this.db
+      .prepare(`
+      SELECT id, username, firstName
+      FROM users
+      WHERE id = ? AND chatId = ?
+    `)
+      .get(userId, chatId) as PozdravokUserBase;
+  }
+
   add(user: PozdravokUserBase, chatId: number): RunResult {
     const chatExist = this.db
       .prepare(`SELECT 1 FROM chats WHERE id = ?`)
@@ -48,10 +68,15 @@ export class PozdravokUserDBManager {
   }
 
   delete(userId: number, chatId: number): RunResult {
-    const test = this.db.prepare(
-      `SELECT * FROM users WHERE id = ? AND chatId = ?;`,
-    );
-    console.log(test.run(userId, chatId));
+    const chatExist = this.db
+      .prepare(`SELECT 1 FROM chats WHERE id = ?`)
+      .get(chatId);
+
+    if (!chatExist) {
+      throw new Error(
+        "Бот пока не умеет поздравлять в этом чате. Научите командой /register",
+      );
+    }
 
     const query = this.db.prepare(`
       DELETE FROM users WHERE id = ? AND chatId = ?

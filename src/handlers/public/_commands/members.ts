@@ -1,5 +1,5 @@
 import type { Bot } from "grammy";
-import type { BotDependencies } from "../../models/bot.models.js";
+import type { BotDependencies } from "../../../models/bot.models.js";
 
 export function registerMemberEvents(
   bot: Bot,
@@ -7,7 +7,7 @@ export function registerMemberEvents(
 ): void {
   const { userDBManager } = dependencies;
 
-  bot.on("message:new_chat_members", async (context) => {
+  bot.on("message:new_chat_members", (context) => {
     const chatId = context.chat.id;
     const newMembers = context.message.new_chat_members;
     let changes = 0;
@@ -28,14 +28,14 @@ export function registerMemberEvents(
     });
 
     if (changes > 0) {
-      (await context.reply(
+      context.reply(
         "Скоро-скоро поздравим " +
           newMembers.map((member) => "@" + member.username),
-      )) + "!";
+      ) + "!";
     }
   });
 
-  bot.on("message:left_chat_member", async (context) => {
+  bot.on("message:left_chat_member", (context) => {
     const user = context.message?.left_chat_member!;
 
     console.log(
@@ -50,7 +50,7 @@ export function registerMemberEvents(
 
     console.log(success);
     if (success) {
-      await context.reply("Ну и пожалуйста! Ну и не нужно!");
+      context.reply("Ну и пожалуйста! Ну и не нужно!");
     }
   });
 }

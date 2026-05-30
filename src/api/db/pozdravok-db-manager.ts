@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import path from "node:path";
+import fs from 'fs';
 
 export class PozdravokDatabaseManager {
   private readonly database: Database.Database;
@@ -13,9 +14,12 @@ export class PozdravokDatabaseManager {
   }
 
   private init(): Database.Database {
-    const database = new Database(
-      path.resolve(process.cwd(), "database/pozdravok.db"),
-    );
+    const databaseDir = path.resolve(process.cwd(), "database");
+    const databasePath = path.join(databaseDir, "pozdravok.db");
+
+    fs.mkdirSync(databaseDir, { recursive: true });
+
+    const database = new Database(databasePath);
 
     database.pragma("foreign_keys = ON");
     database.pragma("journal_mode = WAL");
